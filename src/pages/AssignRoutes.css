@@ -1,0 +1,10 @@
+/* In your CSS file or inside a <style> tag */
+.table-no-bg,
+.table-no-bg thead,
+.table-no-bg tbody,
+.table-no-bg tr,
+.table-no-bg th,
+.table-no-bg td {
+  background-color: transparent !important;
+  color:  white !important; 
+}
