@@ -82,7 +82,7 @@ function Login() {
       if (response.status === 200) {
         toast.success("Login successfully!");
         console.log("token", response.data.data.jwt);
-        
+        localStorage.setItem("email", loginEmail);
         localStorage.setItem("token", response.data.data.jwt);
          navigate("/driver/dashboard");
         setLoading(false);
