@@ -65,6 +65,7 @@ function Login() {
   }
 
   const verifyOtp = async () => {
+    setLoading(true);
     console.log("datatype", typeof payload2.otpCode);
     if (otpCode === 0) {
       toast.warning("OTP field cannot be empty!");
@@ -103,7 +104,7 @@ function Login() {
 
       <div className="text-center mb-4">
         <h1 className="text-primary fw-bold">Welcome Back, Driver!</h1>
-        <p className="lead">Login to access your driving dashboard.</p>
+        <p className="lead text-light">Login to access your driving dashboard.</p>
       </div>
 
       <div className="d-flex justify-content-center">
@@ -168,7 +169,21 @@ function Login() {
               onClick={loginRequest}
               disabled={loading}
             >
-              Send OTP
+              {loading === false ? (
+                    <>
+                      Send OTP
+                      <i className="fas fa-key ms-2"></i>
+                    </>
+                  ) : ( 
+                    <>
+                      Sending...
+                      <div
+                        className="spinner-border spinner-border-sm text-dark ms-2"
+                        role="status"
+                      ></div>
+                    </>
+                  )}
+              
             </button>
           </div>
         </div>
@@ -195,7 +210,7 @@ function Login() {
               >
                 <h6 className="modal-title m-0">
                 
-                  <strong>OTP VErification</strong>
+                  <strong>OTP Verification</strong>
                 </h6>
                 <button
                   type="button"
@@ -209,9 +224,23 @@ function Login() {
                 <input type=" number" className="form-control" value={otpCode} onChange={(e)=> setOtpCode(e.target.value)}/>
               
                 <button
-                  className="btn btn-outline-primary w-100 mb-2"
+                  className="btn btn-outline-primary w-100 mb-2 mt-2"
                   onClick={verifyOtp}
                 >
+                  {loading === false ? (
+                    <>
+                      Verify OTP
+                      <i className="fas fa-key ms-2"></i>
+                    </>
+                  ) : ( 
+                    <>
+                      Verifying...
+                      <div
+                        className="spinner-border spinner-border-sm text-dark ms-2"
+                        role="status"
+                      ></div>
+                    </>
+                  )}
                    Verify OTP
                 </button>
                
