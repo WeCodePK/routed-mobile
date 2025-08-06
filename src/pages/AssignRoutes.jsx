@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './AssignRoutes.css';
 import axios from 'axios';
+import RouteInfo from '../components/RouteInfo';
 
 function AssignRoutes({ afterLoginEmail }) {
   const [status, setStatus] = useState("Pending");
@@ -8,6 +9,12 @@ function AssignRoutes({ afterLoginEmail }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("token");
+    const [singleRouteData, setSingleRouteData] = useState(null);
+  const [viewRouteModalOpen, setViewRouteModalOpen] = useState(false);
+   const openviewRouteModal = (route) => {
+    setSingleRouteData(route);
+    setViewRouteModalOpen(true);
+  };
 
   const getDriversData = async () => {
     try {
@@ -98,10 +105,10 @@ function AssignRoutes({ afterLoginEmail }) {
           <div key={index} className="card mb-3" style={{ borderColor: "#ffc107" }}>
             <div className="card-body text-light" style={{ backgroundColor: "#1e1e2f" }}>
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="card-title text-center">
+                <h6 className="card-title text-center">
                   <i className="fa-solid fa-route me-2"></i>
                   {route.route.name}
-                </h5>
+                </h6>
                 <span className="badge bg-warning text-dark">{status}</span>
               </div>
               <p className="card-text mb-2">
@@ -110,6 +117,13 @@ function AssignRoutes({ afterLoginEmail }) {
                 </strong>{' '}
                 {route.route.totalDistance} km
               </p>
+              <button
+                  className="btn btn-outline-primary w-100 mb-2"
+                 onClick={() => openviewRouteModal(route.route)}
+                >
+                  <i className="fa-solid fa-map-location-dot me-2"></i> See on
+                  Map
+                </button>
               <button
                 className="btn btn-outline-warning w-100"
                 onClick={handleStartJourney}
@@ -121,6 +135,17 @@ function AssignRoutes({ afterLoginEmail }) {
             </div>
           </div>
         ))
+      )}
+    
+
+      
+      {viewRouteModalOpen && singleRouteData && (
+        
+        <RouteInfo
+          viewRouteModalOpen={viewRouteModalOpen}
+          singleRouteData={singleRouteData}
+          setViewRouteModalOpen={setViewRouteModalOpen}
+        />
       )}
     </div>
   );
