@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import login2 from "../images/login2.png";
@@ -8,14 +8,95 @@ import { useNavigate } from "react-router-dom";
 function Login() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [otpCode, setOtpCode] = useState(0);
+  const [otpModal, setOtpModal] = useState(false);
+  const [canResend, setCanResend] = useState(false);
+  const [showOtpMessage, setShowOtpMessage] = useState(true);
+  const [otp, setOtp] = useState(new Array(6).fill(""));
+  const [timer, setTimer] = useState(60);
+  const inputRefs = useRef([]);
 
-  
   const navigate = useNavigate();
+  const payload = { email: loginEmail };
+const sendOtp = async () => {
+  try {
+    const response = await axios.post(
+      "https://routed-backend.wckd.pk/api/v0/auth/driver/otp",
+      payload
+    );
 
+    if (response.status === 200 || response.data?.success) {
+   
+      if(showOtpMessage){
+        toast.success("OTP sent successfully!");
+      setTimer(60);
+      setCanResend(false);
+          setOtpModal(true);
+     
+      setLoading(false)
+      }
+
+      const id = setInterval(() => {
+        setTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(id);
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return true
+    } else {
+      toast.error(!response.data?.success|| "OTP failed. Please try again.");
+      return false;
+    }
+  } catch (error) {
+    toast.error(!error.response?.data?.success || "OTP failed. Please try again.");
+    return false;
+  } finally {
+    setLoading(false);
+  }
+};
+const handleResend = async () => {
+  toast.success("OTP Resent Successfully!");
+  setTimer(60)
+    setOtp(new Array(6).fill(""));
+    inputRefs.current[0]?.focus();
+    setCanResend(false);
+    setShowOtpMessage(false)
+   sendOtp(); 
+    
+  
+}
+
+const handleCloseOTPModal = ()=>{
+  setOtpModal(false)
+  setOtp(new Array(6).fill(""));
+  setTimer(0)
+  setShowOtpMessage(true);
+}
+
+  const handleChange = (element, index) => {
+    if (!/^[a-zA-Z0-9]?$/.test(element.value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = element.value.toUpperCase();
+    setOtp(newOtp);
+
+    if (element.value !== "" && inputRefs.current[index + 1]) {
+      inputRefs.current[index + 1].focus();
+    }
+  };
+  const handleKeyDown = (e, index) => {
+    if (
+      e.key === "Backspace" &&
+      otp[index] === "" &&
+      inputRefs.current[index - 1]
+    ) {
+      inputRefs.current[index - 1].focus();
+    }
+  };
   const loginRequest = async () => {
- 
     setLoading(true);
 
     if (loginEmail === "") {
@@ -29,74 +110,44 @@ function Login() {
       setLoading(false);
       return;
     }
-
-    const payload = { email: loginEmail };
-
-    try {
-      
-      
-
-
-      const response = await axios.post(
-        "https://routed-backend.wckd.pk/api/v0/auth/driver/otp",
-        payload
-      );
-
-      if (response.status === 200) {
-        toast.success("OTP Send successfully!");
-        setShowModal(true);
-
-        // navigate("/home");
-        setLoading(false);
-      }
-    } catch (error) {
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error("OTP failed. Please try again.");
-      }
-      setLoading(false);
-    }
+    await sendOtp();
   };
 
-  const payload2 ={
-    email: loginEmail,
-    otpCode: otpCode,
+ 
+
+ const verifyOtp = async () => {
+  setLoading(true);
+
+  if (otp.join("").length !== 6) {
+    toast.warning("Please enter the complete 6-digit OTP!");
+    setLoading(false);
+    return;
   }
 
-  const verifyOtp = async () => {
-    setLoading(true);
-    console.log("datatype", typeof payload2.otpCode);
-    if (otpCode === 0) {
-      toast.warning("OTP field cannot be empty!");
-      return;
+  try {
+    const payload2 = {
+      email: loginEmail,
+      otpCode: otp.join(""),
+    };
+
+    const response = await axios.post(
+      "https://routed-backend.wckd.pk/api/v0/auth/driver/login",
+      payload2
+    );
+
+    if (response.status === 200) {
+      toast.success("Login successfully!");
+      localStorage.setItem("email", loginEmail);
+      localStorage.setItem("token", response.data.data.jwt);
+      navigate("/driver/dashboard");
     }
-     try {
-      
-
-
-      const response = await axios.post(
-        "https://routed-backend.wckd.pk/api/v0/auth/driver/login",
-        payload2
-      );
-
-      if (response.status === 200) {
-        toast.success("Login successfully!");
-        console.log("token", response.data.data.jwt);
-        localStorage.setItem("email", loginEmail);
-        localStorage.setItem("token", response.data.data.jwt);
-         navigate("/driver/dashboard");
-        setLoading(false);
-      }
-    } catch (error) {
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error("Login failed. Please try again.");
-      }
-      setLoading(false);
-    }
+  } catch (error) {
+    toast.error(error.response?.data?.message || "Login failed. Please try again.");
+  } finally {
+    setLoading(false);
   }
+};
+
 
   return (
     <div className="container my-5">
@@ -104,7 +155,9 @@ function Login() {
 
       <div className="text-center mb-4">
         <h1 className="text-primary fw-bold">Welcome Back, Driver!</h1>
-        <p className="lead text-light">Login to access your driving dashboard.</p>
+        <p className="lead text-light">
+          Login to access your driving dashboard.
+        </p>
       </div>
 
       <div className="d-flex justify-content-center">
@@ -118,7 +171,7 @@ function Login() {
           }}
         >
           {/* Image Section */}
-          <div className="text-center mb-md-0 " style={{ flex: 1}}>
+          <div className="text-center mb-md-0 " style={{ flex: 1 }}>
             <img
               src={login2}
               alt="Login"
@@ -131,13 +184,12 @@ function Login() {
             />
           </div>
 
-      {          /* Vertical Divider */}
+          {/* Vertical Divider */}
           <div
             className="d-block d-md-none w-100 my-3"
             style={{ height: "1px", backgroundColor: "#ccc" }}
           ></div>
 
-    
           <div
             className="d-none d-md-block"
             style={{
@@ -170,80 +222,173 @@ function Login() {
               disabled={loading}
             >
               {loading === false ? (
-                    <>
-                      Send OTP
-                      <i className="fas fa-key ms-2"></i>
-                    </>
-                  ) : ( 
-                    <>
-                      Sending...
-                      <div
-                        className="spinner-border spinner-border-sm text-dark ms-2"
-                        role="status"
-                      ></div>
-                    </>
-                  )}
-              
+                <>
+                  Send OTP
+                  <i className="fas fa-key ms-2"></i>
+                </>
+              ) : (
+                <>
+                  Sending OTP...
+                  <div
+                    className="spinner-border spinner-border-sm text-dark ms-2"
+                    role="status"
+                  ></div>
+                </>
+              )}
             </button>
           </div>
         </div>
       </div>
 
-      
-      {showModal && (
+      {otpModal && (
         <div
-          className="modal fade show d-block"
+          className="modal show d-block"
           tabIndex="-1"
-          style={{
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
-            backdropFilter: "blur(0px)",
-          }}
+          style={{ backgroundColor: "rgba(26, 26, 26, 0.5)" }}
         >
-          <div className="modal-dialog modal-sm modal-dialog-centered">
+          <div
+            className="modal-dialog modal-dialog-centered"
+            style={{
+              width: "90vw", 
+              maxWidth: "370px", 
+              margin: "auto",
+            }}
+          >
             <div
-              className="modal-content shadow"
-              style={{ borderRadius: "10px" }}
+              className="modal-content text-white"
+              style={{
+                background: "linear-gradient(45deg, #0f2027, #203a43, #2c5364)",
+              }}
             >
-              <div
-                className="modal-header text-light py-2 px-3"
-                style={{ backgroundColor: "#1e1e2f" }}
-              >
-                <h6 className="modal-title m-0">
-                
-                  <strong>OTP Verification</strong>
-                </h6>
+              <div className="modal-header">
+                <h5 className="modal-title">VERIFY OTP</h5>
                 <button
                   type="button"
                   className="btn-close btn-close-white"
-                  aria-label="Close"
-                  onClick={() => setShowModal(false)}
+                  onClick={handleCloseOTPModal}
                 ></button>
               </div>
-              <div className="modal-body text-center">
 
-                <input type=" number" className="form-control" value={otpCode} onChange={(e)=> setOtpCode(e.target.value)}/>
-              
-                <button
-                  className="btn btn-outline-primary w-100 mb-2 mt-2"
-                  onClick={verifyOtp}
+              <div className="modal-body">
+                <p style={{ opacity: 0.85, fontSize: "0.9rem" }}>
+                  We've sent a One-Time Password (OTP) to your registered email.
+                  Enter it below to verify your identity.
+                </p>
+                <p
+                  style={{
+                    opacity: 0.7,
+                    fontSize: "0.9rem",
+                    marginTop: "6px",
+                    textAlign: "center",
+                  }}
                 >
-                  {loading === false ? (
-                    <>
-                      Verify OTP
-                      <i className="fas fa-key ms-2"></i>
-                    </>
-                  ) : ( 
-                    <>
-                      Verifying...
+                  <i className="fas fa-clock me-1"></i> OTP will expire in
+                </p>
+
+                <div className="text-center mt-2">
+                  {!canResend ? (
+                    <div className="d-flex justify-content-center align-items-center">
                       <div
-                        className="spinner-border spinner-border-sm text-dark ms-2"
-                        role="status"
-                      ></div>
+                        className="mt-1"
+                        style={{
+                          width: "75px",
+                          height: "75px",
+                          borderRadius: "50%",
+                          border: "6px solid white",
+                          backgroundColor: "transparent",
+                          color: "#ffc107",
+                          fontSize: "32px",
+                          fontWeight: "bold",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {timer % 120}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mt-2">
+                        <span
+                          className="text-warning"
+                          style={{
+                            cursor: "pointer",
+                            fontWeight: "bold",
+                            fontSize: "1.05rem",
+                          }}
+                          onClick={handleResend}
+                        >
+                          <i className="fas fa-paper-plane me-2"></i> Resend OTP
+                        </span>
+                      </div>
+
+                      <div className="mt-2">
+                        <p
+                          className="text-light"
+                          style={{ fontSize: "0.9rem" }}
+                        >
+                          <i className="fas fa-info-circle me-2"></i> Didn't
+                          receive the OTP? Check your spam folder or try
+                          resending.
+                        </p>
+                      </div>
                     </>
                   )}
-                   Verify OTP
+                </div>
+
+                <div className="d-flex justify-content-center gap-2 mt-4">
+                  {otp.map((val, index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      maxLength="1"
+                      className="form-control text-center"
+                      style={{
+                        width: "36px",
+                        height: "40px",
+                        fontSize: "0.7rem",
+                        fontWeight: "bold",
+                        borderRadius: "1px",
+                        backgroundColor: "#f8f9fa",
+                        border: "1px solid #ced4da",
+                      }}
+                      value={otp[index]}
+                      ref={(el) => (inputRefs.current[index] = el)}
+                      onChange={(e) => handleChange(e.target, index)}
+                      onKeyDown={(e) => handleKeyDown(e, index)}
+                    />
+                  ))}
+                </div>
+
+                <div className="text-center mt-4">
+                  <button
+                    className="btn btn-outline-warning fw-bold d-flex align-items-center justify-content-center px-3 py-2 mx-auto btn-sm"
+                    onClick={verifyOtp}
+                  >
+                    <i className="fas fa-key me-2"></i>
+                    {loading === false ? (
+                      "Verify OTP"
+                    ) : (
+                      <>
+                        Verifying OTP...
+                        <div
+                          className="spinner-border spinner-border-sm text-dark ms-2"
+                          role="status"
+                        ></div>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleCloseOTPModal}
+                >
+                  Cancel
                 </button>
-               
               </div>
             </div>
           </div>

@@ -11,10 +11,18 @@ function AssignRoutes({ afterLoginEmail }) {
   const token = localStorage.getItem("token");
     const [singleRouteData, setSingleRouteData] = useState(null);
   const [viewRouteModalOpen, setViewRouteModalOpen] = useState(false);
+  const [startJourney, setStartJourney] = useState(false);
    const openviewRouteModal = (route) => {
     setSingleRouteData(route);
     setViewRouteModalOpen(true);
   };
+  const handleJourneyButton = (route)=>{
+    setStartJourney(true)
+     setSingleRouteData(route);
+    setViewRouteModalOpen(true);
+    console.log(startJourney);
+    
+  }
 
   const getDriversData = async () => {
     try {
@@ -76,10 +84,6 @@ function AssignRoutes({ afterLoginEmail }) {
     }
   }, [currentUser]); 
 
-  const handleStartJourney = () => {
-    setStatus("In Progress");
-    alert(" Journey started!");
-  };
 
   return (
     <div className="container mt-3">
@@ -104,13 +108,22 @@ function AssignRoutes({ afterLoginEmail }) {
         routes.map((route, index) => (
           <div key={index} className="card mb-3" style={{ borderColor: "#ffc107" }}>
             <div className="card-body text-light" style={{ backgroundColor: "#1e1e2f" }}>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h6 className="card-title text-center">
-                  <i className="fa-solid fa-route me-2"></i>
-                  {route.route.name}
-                </h6>
-                <span className="badge bg-warning text-dark">{status}</span>
-              </div>
+             <div className="d-flex justify-content-between align-items-center mb-3">
+  <h6
+    className="card-title mb-0 text-truncate"
+    style={{
+      maxWidth: "calc(100% - 100px)", 
+      overflow: "hidden",
+      whiteSpace: "nowrap",
+      textOverflow: "ellipsis",
+    }}
+  >
+    <i className="fa-solid fa-route me-2"></i>
+    {route.route.name}
+  </h6>
+  <span className="badge bg-warning text-dark flex-shrink-0">{status}</span>
+</div>
+
               <p className="card-text mb-2">
                 <strong>
                   <i className="fas fa-road me-2"></i>Distance:
@@ -126,7 +139,7 @@ function AssignRoutes({ afterLoginEmail }) {
                 </button>
               <button
                 className="btn btn-outline-warning w-100"
-                onClick={handleStartJourney}
+                onClick={()=> handleJourneyButton(route.route)}
                 disabled={status === "In Progress"}
               >
                 <i className="fas fa-flag-checkered me-2"></i>
@@ -145,8 +158,11 @@ function AssignRoutes({ afterLoginEmail }) {
           viewRouteModalOpen={viewRouteModalOpen}
           singleRouteData={singleRouteData}
           setViewRouteModalOpen={setViewRouteModalOpen}
+          startJourney={startJourney}
+          setStartJourney = {setStartJourney}
         />
       )}
+      
     </div>
   );
 }

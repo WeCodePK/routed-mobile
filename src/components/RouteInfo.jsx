@@ -15,6 +15,8 @@ function RouteInfo({
   viewRouteModalOpen,
   singleRouteData,
   setViewRouteModalOpen,
+  startJourney,
+  setStartJourney
 }) {
   const [points, setPoints] = useState([]);
   const [routePath, setRoutePath] = useState([]);
@@ -39,6 +41,56 @@ function RouteInfo({
     iconSize: [30, 42],
     iconAnchor: [15, 42],
   });
+  useEffect(() => {
+    
+  if (!viewRouteModalOpen) return;
+
+  if (startJourney) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+
+        // Add current location as first point
+        const updatedPoints = [
+          { name: "Your Location", coords: [userLat, userLng] },
+          ...(singleRouteData.points || [])
+        ];
+
+        setPoints(updatedPoints);
+
+        // Build OSRM coordinates string
+        const coords = updatedPoints
+          .map((p) => `${p.coords[1]},${p.coords[0]}`)
+          .join(";");
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+
+        axios
+          .get(url)
+          .then((res) => {
+            const geo = res.data.routes[0].geometry.coordinates;
+            const formatted = geo.map(([lng, lat]) => [lat, lng]);
+            setRoutePath(formatted);
+
+            const distanceInMeter = res.data.routes[0].distance;
+            const distanceInKm = (distanceInMeter / 1000).toFixed(2);
+            setTotalDistance(distanceInKm);
+          })
+          .catch((err) => console.error("OSRM error:", err));
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+      }
+    );
+  } else {
+    // Normal mode (no current location)
+    setPoints(singleRouteData.points || []);
+    setTotalDistance(singleRouteData.totalDistance || "0 km");
+    setRoutePath([]);
+  }
+}, [viewRouteModalOpen, startJourney]);
+
   useEffect(() => {
     if (!viewRouteModalOpen || points.length < 2) return;
 
@@ -76,6 +128,11 @@ function RouteInfo({
     }, [center]);
     return null;
   }
+
+  const modalClosed=()=>{
+    setStartJourney(false)
+    setViewRouteModalOpen(false)
+  }
   return (
     <div>
       <div
@@ -90,7 +147,7 @@ function RouteInfo({
               <button
                 type="button"
                 className="btn-close"
-                onClick={() => setViewRouteModalOpen(false)}
+                onClick={modalClosed}
               ></button>
             </div>
             <div className="modal-body">
@@ -156,7 +213,7 @@ function RouteInfo({
             <div className="modal-footer">
               <button
                 className="btn btn-secondary"
-                onClick={() => setViewRouteModalOpen(false)}
+                onClick={modalClosed}
               >
                 Close
               </button>
