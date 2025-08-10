@@ -16,11 +16,25 @@ function RouteInfo({
   singleRouteData,
   setViewRouteModalOpen,
   startJourney,
-  setStartJourney
+  setStartJourney,
 }) {
   const [points, setPoints] = useState([]);
   const [routePath, setRoutePath] = useState([]);
   const [totalDistance, setTotalDistance] = useState("");
+
+  // Icons
+  const currentLocationIcon = L.divIcon({
+    className: "custom-div-icon",
+    html: `<div style="color: green; font-size: 24px;"><i class="fas fa-location-arrow"></i></div>`,
+    iconSize: [30, 42],
+    iconAnchor: [15, 42],
+  });
+  const customIcon = L.divIcon({
+    className: "custom-div-icon",
+    html: `<div style="color: red; font-size: 24px;"><i class="fas fa-map-marker-alt"></i></div>`,
+    iconSize: [30, 42],
+    iconAnchor: [15, 42],
+  });
 
   function ClickHandler({ addPoint }) {
     useMapEvents({
@@ -35,61 +49,88 @@ function RouteInfo({
     points.length > 0
       ? points[Math.floor(points.length / 2)].coords
       : [33.6844, 73.0479];
-  const customIcon = L.divIcon({
-    className: "custom-div-icon",
-    html: `<div style="color: red; font-size: 24px;"><i class="fas fa-map-marker-alt"></i></div>`,
-    iconSize: [30, 42],
-    iconAnchor: [15, 42],
-  });
+
   useEffect(() => {
-    
-  if (!viewRouteModalOpen) return;
+    if (!viewRouteModalOpen) return;
 
-  if (startJourney) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
-
-        // Add current location as first point
-        const updatedPoints = [
-          { name: "Your Location", coords: [userLat, userLng] },
-          ...(singleRouteData.points || [])
-        ];
-
-        setPoints(updatedPoints);
-
-        // Build OSRM coordinates string
-        const coords = updatedPoints
-          .map((p) => `${p.coords[1]},${p.coords[0]}`)
-          .join(";");
-
-        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
-
-        axios
-          .get(url)
-          .then((res) => {
-            const geo = res.data.routes[0].geometry.coordinates;
-            const formatted = geo.map(([lng, lat]) => [lat, lng]);
-            setRoutePath(formatted);
-
-            const distanceInMeter = res.data.routes[0].distance;
-            const distanceInKm = (distanceInMeter / 1000).toFixed(2);
-            setTotalDistance(distanceInKm);
-          })
-          .catch((err) => console.error("OSRM error:", err));
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
+    if (startJourney) {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        setPoints(singleRouteData.points || []);
+        setTotalDistance(singleRouteData.totalDistance || "0 km");
+        setRoutePath([]);
+        return;
       }
-    );
-  } else {
-    // Normal mode (no current location)
-    setPoints(singleRouteData.points || []);
-    setTotalDistance(singleRouteData.totalDistance || "0 km");
-    setRoutePath([]);
-  }
-}, [viewRouteModalOpen, startJourney]);
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log(
+            "Geolocation success:",
+            position.coords.latitude,
+            position.coords.longitude
+          );
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+
+          const updatedPoints = [
+            { name: "Your Location", coords: [userLat, userLng] },
+            ...(singleRouteData.points || []),
+          ];
+
+          setPoints(updatedPoints);
+
+          const coords = updatedPoints
+            .map((p) => `${p.coords[1]},${p.coords[0]}`)
+            .join(";");
+
+          const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+
+          axios
+            .get(url)
+            .then((res) => {
+              const geo = res.data.routes[0].geometry.coordinates;
+              const formatted = geo.map(([lng, lat]) => [lat, lng]);
+              setRoutePath(formatted);
+
+              const distanceInMeter = res.data.routes[0].distance;
+              const distanceInKm = (distanceInMeter / 1000).toFixed(2);
+              setTotalDistance(distanceInKm);
+            })
+            .catch((err) => console.error("OSRM error:", err));
+        },
+        (error) => {
+          console.error(
+            "Geolocation error code:",
+            error.code,
+            error.message
+          );
+          if (error.code === error.PERMISSION_DENIED) {
+             alert("Location permission denied");
+    } else if (error.code === error.POSITION_UNAVAILABLE) {
+      alert("Position unavailable");
+    } else if (error.code === error.TIMEOUT) {
+      alert("Geolocation timeout");
+    } else {
+      alert("Unknown geolocation error");
+    }
+          // Fallback: just show route points without current location
+          setPoints(singleRouteData.points || []);
+          setTotalDistance(singleRouteData.totalDistance || "0 km");
+          setRoutePath([]);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    } else {
+      // Normal mode (no current location)
+      setPoints(singleRouteData.points || []);
+      setTotalDistance(singleRouteData.totalDistance || "0 km");
+      setRoutePath([]);
+    }
+  }, [viewRouteModalOpen, startJourney]);
 
   useEffect(() => {
     if (!viewRouteModalOpen || points.length < 2) return;
@@ -129,10 +170,11 @@ function RouteInfo({
     return null;
   }
 
-  const modalClosed=()=>{
-    setStartJourney(false)
-    setViewRouteModalOpen(false)
-  }
+  const modalClosed = () => {
+    setStartJourney(false);
+    setViewRouteModalOpen(false);
+  };
+
   return (
     <div>
       <div
@@ -197,13 +239,20 @@ function RouteInfo({
                   {routePath.length > 0 && (
                     <Polyline positions={routePath} color="blue" />
                   )}
-                  {points.map((point) => (
+
+                  {points.map((point, index) => (
                     <Marker
-                      key={point.name}
+                      key={point.name + index}
                       position={point.coords}
-                      icon={customIcon}
+                      icon={
+                        index === 0
+                          ? currentLocationIcon
+                          : customIcon
+                      }
                     >
-                      <Tooltip permanent>{point.name}</Tooltip>
+                      <Tooltip permanent>
+                        {index === 0 ? "Current Location" : point.name}
+                      </Tooltip>
                     </Marker>
                   ))}
                 </MapContainer>
