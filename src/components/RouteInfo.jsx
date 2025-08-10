@@ -99,20 +99,16 @@ function RouteInfo({
             .catch((err) => console.error("OSRM error:", err));
         },
         (error) => {
-          console.error(
-            "Geolocation error code:",
-            error.code,
-            error.message
-          );
+          console.error("Geolocation error code:", error.code, error.message);
           if (error.code === error.PERMISSION_DENIED) {
-             alert("Location permission denied");
-    } else if (error.code === error.POSITION_UNAVAILABLE) {
-      alert("Position unavailable");
-    } else if (error.code === error.TIMEOUT) {
-      alert("Geolocation timeout");
-    } else {
-      alert("Unknown geolocation error");
-    }
+            alert("Location permission denied");
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            alert("Position unavailable");
+          } else if (error.code === error.TIMEOUT) {
+            alert("Geolocation timeout");
+          } else {
+            alert("Unknown geolocation error");
+          }
           // Fallback: just show route points without current location
           setPoints(singleRouteData.points || []);
           setTotalDistance(singleRouteData.totalDistance || "0 km");
@@ -193,35 +189,39 @@ function RouteInfo({
               ></button>
             </div>
             <div className="modal-body">
-              <h3 className="text-center fw-bold">
-                <i className="fa-solid fa-route me-2"></i>Route Details
-              </h3>
-              <div className="row mt-4">
-                <div className="col-md-3">
-                  <p>
-                    <b>Route Name:</b> {singleRouteData.name}
-                  </p>
-                </div>
-                <div className="col-md-3">
-                  <p>
-                    <b>Route Description:</b> {singleRouteData.description}
-                  </p>
-                </div>
-                <div className="col-md-3">
-                  <p>
-                    <b>Route Total Distance:</b>{" "}
-                    {totalDistance || singleRouteData.totalDistance} km
-                  </p>
-                </div>
-                <div className="col-md-3">
-                  <p>
-                    <b>Route Creation:</b>{" "}
-                    {new Date(singleRouteData.createdAt).toLocaleDateString(
-                      "en-GB"
-                    )}
-                  </p>
-                </div>
-              </div>
+              {!startJourney && (
+                <>
+                  <h3 className="text-center fw-bold">
+                    <i className="fa-solid fa-route me-2"></i>Route Details
+                  </h3>
+                  <div className="row mt-4">
+                    <div className="col-md-3">
+                      <p>
+                        <b>Route Name:</b> {singleRouteData.name}
+                      </p>
+                    </div>
+                    <div className="col-md-3">
+                      <p>
+                        <b>Route Description:</b> {singleRouteData.description}
+                      </p>
+                    </div>
+                    <div className="col-md-3">
+                      <p>
+                        <b>Route Total Distance:</b>{" "}
+                        {totalDistance || singleRouteData.totalDistance} km
+                      </p>
+                    </div>
+                    <div className="col-md-3">
+                      <p>
+                        <b>Route Creation:</b>{" "}
+                        {new Date(singleRouteData.createdAt).toLocaleDateString(
+                          "en-GB"
+                        )}
+                      </p>
+                    </div>
+                  </div>{" "}
+                </>
+              )}
 
               <div style={{ height: "400px" }} className="mt-3">
                 <MapContainer
@@ -245,13 +245,15 @@ function RouteInfo({
                       key={point.name + index}
                       position={point.coords}
                       icon={
-                        index === 0
+                        startJourney && index === 0
                           ? currentLocationIcon
                           : customIcon
                       }
                     >
                       <Tooltip permanent>
-                        {index === 0 ? "Current Location" : point.name}
+                        {startJourney && index === 0
+                          ? "Current Location"
+                          : point.name}
                       </Tooltip>
                     </Marker>
                   ))}
@@ -260,10 +262,7 @@ function RouteInfo({
             </div>
 
             <div className="modal-footer">
-              <button
-                className="btn btn-secondary"
-                onClick={modalClosed}
-              >
+              <button className="btn btn-secondary" onClick={modalClosed}>
                 Close
               </button>
             </div>
