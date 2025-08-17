@@ -49,84 +49,52 @@ function RouteInfo({
     points.length > 0
       ? points[Math.floor(points.length / 2)].coords
       : [33.6844, 73.0479];
+useEffect(() => {
+  if (!viewRouteModalOpen) return;
 
-  useEffect(() => {
-    if (!viewRouteModalOpen) return;
-
-    if (startJourney) {
-      if (!navigator.geolocation) {
-        alert("Geolocation is not supported by your browser.");
-        setPoints(singleRouteData.points || []);
-        setTotalDistance(singleRouteData.totalDistance || "0 km");
-        setRoutePath([]);
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log(
-            "Geolocation success:",
-            position.coords.latitude,
-            position.coords.longitude
-          );
-          const userLat = position.coords.latitude;
-          const userLng = position.coords.longitude;
-
-          const updatedPoints = [
-            { name: "Your Location", coords: [userLat, userLng] },
-            ...(singleRouteData.points || []),
-          ];
-
-          setPoints(updatedPoints);
-
-          const coords = updatedPoints
-            .map((p) => `${p.coords[1]},${p.coords[0]}`)
-            .join(";");
-
-          const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
-
-          axios
-            .get(url)
-            .then((res) => {
-              const geo = res.data.routes[0].geometry.coordinates;
-              const formatted = geo.map(([lng, lat]) => [lat, lng]);
-              setRoutePath(formatted);
-
-              const distanceInMeter = res.data.routes[0].distance;
-              const distanceInKm = (distanceInMeter / 1000).toFixed(2);
-              setTotalDistance(distanceInKm);
-            })
-            .catch((err) => console.error("OSRM error:", err));
-        },
-        (error) => {
-          console.error("Geolocation error code:", error.code, error.message);
-          if (error.code === error.PERMISSION_DENIED) {
-            alert("Location permission denied");
-          } else if (error.code === error.POSITION_UNAVAILABLE) {
-            alert("Position unavailable");
-          } else if (error.code === error.TIMEOUT) {
-            alert("Geolocation timeout");
-          } else {
-            alert("Unknown geolocation error");
-          }
-          // Fallback: just show route points without current location
-          setPoints(singleRouteData.points || []);
-          setTotalDistance(singleRouteData.totalDistance || "0 km");
-          setRoutePath([]);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        }
-      );
-    } else {
-      // Normal mode (no current location)
-      setPoints(singleRouteData.points || []);
-      setTotalDistance(singleRouteData.totalDistance || "0 km");
-      setRoutePath([]);
+  if (startJourney) {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
     }
-  }, [viewRouteModalOpen, startJourney]);
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+
+        console.log("Live update:", userLat, userLng);
+
+        const updatedPoints = [
+          { name: "Your Location", coords: [userLat, userLng] },
+          ...(singleRouteData.points || []),
+        ];
+        setPoints(updatedPoints);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        if (error.code === error.PERMISSION_DENIED) {
+          alert("Location permission denied");
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          alert("Location unavailable");
+        } else if (error.code === error.TIMEOUT) {
+          alert("Location request timed out");
+        } else {
+          alert("Unable to fetch location updates");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }
+}, [viewRouteModalOpen, startJourney, singleRouteData]);
+
+
 
   useEffect(() => {
     if (!viewRouteModalOpen || points.length < 2) return;

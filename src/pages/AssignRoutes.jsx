@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import './AssignRoutes.css';
-import axios from 'axios';
-import RouteInfo from '../components/RouteInfo';
+import React, { useEffect, useState } from "react";
+import "./AssignRoutes.css";
+import axios from "axios";
+import RouteInfo from "../components/RouteInfo";
 
 function AssignRoutes({ afterLoginEmail }) {
   const [status, setStatus] = useState("Pending");
@@ -9,20 +9,19 @@ function AssignRoutes({ afterLoginEmail }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("token");
-    const [singleRouteData, setSingleRouteData] = useState(null);
+  const [singleRouteData, setSingleRouteData] = useState(null);
   const [viewRouteModalOpen, setViewRouteModalOpen] = useState(false);
   const [startJourney, setStartJourney] = useState(false);
-   const openviewRouteModal = (route) => {
+  const openviewRouteModal = (route) => {
     setSingleRouteData(route);
     setViewRouteModalOpen(true);
   };
-  const handleJourneyButton = (route)=>{
-    setStartJourney(true)
-     setSingleRouteData(route);
+  const handleJourneyButton = (route) => {
+    setStartJourney(true);
+    setSingleRouteData(route);
     setViewRouteModalOpen(true);
     console.log(startJourney);
-    
-  }
+  };
 
   const getDriversData = async () => {
     try {
@@ -42,8 +41,13 @@ function AssignRoutes({ afterLoginEmail }) {
       setCurrentUser(foundDriver);
       console.log("Current User:", foundDriver);
     } catch (error) {
-      console.error("Failed to fetch drivers:", error.response?.data || error.message);
-      alert("Driver not found: " + (error.response?.data?.error || error.message));
+      console.error(
+        "Failed to fetch drivers:",
+        error.response?.data || error.message
+      );
+      alert(
+        "Driver not found: " + (error.response?.data?.error || error.message)
+      );
     }
   };
 
@@ -63,7 +67,7 @@ function AssignRoutes({ afterLoginEmail }) {
       const currentUserRoutes = allAssignments.filter(
         (assignment) => assignment.driver.id === currentUser.id
       );
-      setLoading(false)
+      setLoading(false);
 
       console.log("Current User Routes:", currentUserRoutes);
       setRoutes(currentUserRoutes);
@@ -82,12 +86,11 @@ function AssignRoutes({ afterLoginEmail }) {
     if (currentUser) {
       getRoutesAgainstDriver();
     }
-  }, [currentUser]); 
-
+  }, [currentUser]);
 
   return (
     <div className="container mt-3">
-       {loading && (
+      {loading && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75"
           style={{ zIndex: 1055 }}
@@ -106,40 +109,48 @@ function AssignRoutes({ afterLoginEmail }) {
         <div className="text-center text-muted">No assigned routes found.</div>
       ) : (
         routes.map((route, index) => (
-          <div key={index} className="card mb-3" style={{ borderColor: "#ffc107" }}>
-            <div className="card-body text-light" style={{ backgroundColor: "#1e1e2f" }}>
-             <div className="d-flex justify-content-between align-items-center mb-3">
-  <h6
-    className="card-title mb-0 text-truncate"
-    style={{
-      maxWidth: "calc(100% - 100px)", 
-      overflow: "hidden",
-      whiteSpace: "nowrap",
-      textOverflow: "ellipsis",
-    }}
-  >
-    <i className="fa-solid fa-route me-2"></i>
-    {route.route.name}
-  </h6>
-  <span className="badge bg-warning text-dark flex-shrink-0">{status}</span>
-</div>
+          <div
+            key={index}
+            className="card mb-3"
+            style={{ borderColor: "#ffc107" }}
+          >
+            <div
+              className="card-body text-light"
+              style={{ backgroundColor: "#1e1e2f" }}
+            >
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6
+                  className="card-title mb-0 text-truncate"
+                  style={{
+                    maxWidth: "calc(100% - 100px)",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  <i className="fa-solid fa-route me-2"></i>
+                  {route.route.name}
+                </h6>
+                <span className="badge bg-warning text-dark flex-shrink-0">
+                  {status}
+                </span>
+              </div>
 
               <p className="card-text mb-2">
                 <strong>
                   <i className="fas fa-road me-2"></i>Distance:
-                </strong>{' '}
+                </strong>{" "}
                 {route.route.totalDistance} km
               </p>
               <button
-                  className="btn btn-outline-primary w-100 mb-2"
-                 onClick={() => openviewRouteModal(route.route)}
-                >
-                  <i className="fa-solid fa-map-location-dot me-2"></i> See on
-                  Map
-                </button>
+                className="btn btn-outline-primary w-100 mb-2"
+                onClick={() => openviewRouteModal(route.route)}
+              >
+                <i className="fa-solid fa-map-location-dot me-2"></i> See on Map
+              </button>
               <button
                 className="btn btn-outline-warning w-100"
-                onClick={()=> handleJourneyButton(route.route)}
+                onClick={() => handleJourneyButton(route.route)}
                 disabled={status === "In Progress"}
               >
                 <i className="fas fa-flag-checkered me-2"></i>
@@ -149,20 +160,16 @@ function AssignRoutes({ afterLoginEmail }) {
           </div>
         ))
       )}
-    
 
-      
       {viewRouteModalOpen && singleRouteData && (
-        
         <RouteInfo
           viewRouteModalOpen={viewRouteModalOpen}
           singleRouteData={singleRouteData}
           setViewRouteModalOpen={setViewRouteModalOpen}
           startJourney={startJourney}
-          setStartJourney = {setStartJourney}
+          setStartJourney={setStartJourney}
         />
       )}
-      
     </div>
   );
 }
