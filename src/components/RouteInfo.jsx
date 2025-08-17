@@ -21,6 +21,7 @@ function RouteInfo({
   const [points, setPoints] = useState([]);
   const [routePath, setRoutePath] = useState([]);
   const [totalDistance, setTotalDistance] = useState("");
+  const [followUser, setFollowUser] = useState(true);
 
   // Icons
   const currentLocationIcon = L.divIcon({
@@ -49,52 +50,50 @@ function RouteInfo({
     points.length > 0
       ? points[Math.floor(points.length / 2)].coords
       : [33.6844, 73.0479];
-useEffect(() => {
-  if (!viewRouteModalOpen) return;
+  useEffect(() => {
+    if (!viewRouteModalOpen) return;
 
-  if (startJourney) {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
-      return;
-    }
-
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
-
-        console.log("Live update:", userLat, userLng);
-
-        const updatedPoints = [
-          { name: "Your Location", coords: [userLat, userLng] },
-          ...(singleRouteData.points || []),
-        ];
-        setPoints(updatedPoints);
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        if (error.code === error.PERMISSION_DENIED) {
-          alert("Location permission denied");
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          alert("Location unavailable");
-        } else if (error.code === error.TIMEOUT) {
-          alert("Location request timed out");
-        } else {
-          alert("Unable to fetch location updates");
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+    if (startJourney) {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
       }
-    );
 
-    return () => navigator.geolocation.clearWatch(watchId);
-  }
-}, [viewRouteModalOpen, startJourney, singleRouteData]);
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
 
+          console.log("Live update:", userLat, userLng);
 
+          const updatedPoints = [
+            { name: "Your Location", coords: [userLat, userLng] },
+            ...(singleRouteData.points || []),
+          ];
+          setPoints(updatedPoints);
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          if (error.code === error.PERMISSION_DENIED) {
+            alert("Location permission denied");
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            alert("Location unavailable");
+          } else if (error.code === error.TIMEOUT) {
+            alert("Location request timed out");
+          } else {
+            alert("Unable to fetch location updates");
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, [viewRouteModalOpen, startJourney, singleRouteData]);
 
   useEffect(() => {
     if (!viewRouteModalOpen || points.length < 2) return;
@@ -124,13 +123,21 @@ useEffect(() => {
     }
   }, [viewRouteModalOpen]);
 
-  function MapUpdater({ center }) {
+  function MapUpdater({ center, followUser }) {
     const map = useMap();
+
     useEffect(() => {
-      if (center) {
+      if (center && followUser) {
         map.setView(center, 13);
       }
-    }, [center]);
+    }, [center, followUser]);
+
+    return null;
+  }
+  function MapEventHandler({ setFollowUser }) {
+    useMapEvents({
+      dragstart: () => setFollowUser(false), // stop following if user drags map
+    });
     return null;
   }
 
@@ -202,7 +209,8 @@ useEffect(() => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   <ClickHandler addPoint={() => {}} />
-                  <MapUpdater center={center} />
+                  <MapUpdater center={center} followUser={followUser} />
+                  <MapEventHandler setFollowUser={setFollowUser} />
 
                   {routePath.length > 0 && (
                     <Polyline positions={routePath} color="blue" />
@@ -232,6 +240,12 @@ useEffect(() => {
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={modalClosed}>
                 Close
+              </button>
+              <button
+                className="btn btn-primary mb-2"
+                onClick={() => setFollowUser(true)}
+              >
+                Recenter on Me
               </button>
             </div>
           </div>
