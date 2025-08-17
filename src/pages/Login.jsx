@@ -154,8 +154,8 @@ const handleCloseOTPModal = ()=>{
       <ToastContainer />
 
       <div className="text-center mb-4">
-        <h1 className="text-primary fw-bold">Welcome Back, Driver!</h1>
-        <p className="lead text-light">
+        <h1 className="fw-bold" style={{color :"#0a1128"}}>Welcome Back, Driver!</h1>
+        <p className="lead text-dark">
           Login to access your driving dashboard.
         </p>
       </div>
@@ -164,7 +164,7 @@ const handleCloseOTPModal = ()=>{
         <div
           className="shadow-lg p-4 rounded-4 d-flex flex-column flex-md-row align-items-center w-100"
           style={{
-            backgroundColor: "#f9f9f9",
+            backgroundColor: "#0a1128",
             maxWidth: "800px",
             width: "100%",
             minHeight: "400px",
@@ -184,7 +184,7 @@ const handleCloseOTPModal = ()=>{
             />
           </div>
 
-          {/* Vertical Divider */}
+       
           <div
             className="d-block d-md-none w-100 my-3"
             style={{ height: "1px", backgroundColor: "#ccc" }}
@@ -200,24 +200,23 @@ const handleCloseOTPModal = ()=>{
             }}
           ></div>
 
-          {/* Login Form Section */}
           <div className="px-md-4 w-100" style={{ flex: 1 }}>
-            <h2 className="text-center mb-3">Driver Login</h2>
-            <p className="text-center text-muted">
+            <h2 className="text-center mb-3 text-light">Driver Login</h2>
+            <p className="text-center text-light">
               <b>Enter valid email to get access</b>
             </p>
 
-            <label>Email</label>
+            <label className="text-light">Email</label>
             <input
               type="email"
-              className="form-control mb-3"
+              className="form-control mb-3 mt-1"
               value={loginEmail}
               onChange={(e) => setLoginEmail(e.target.value)}
               placeholder="Enter your email"
             />
 
             <button
-              className="btn btn-primary w-100"
+              className="btn btn-outline-light w-100"
               onClick={loginRequest}
               disabled={loading}
             >
@@ -230,7 +229,7 @@ const handleCloseOTPModal = ()=>{
                 <>
                   Sending OTP...
                   <div
-                    className="spinner-border spinner-border-sm text-dark ms-2"
+                    className="spinner-border spinner-border-sm text-light ms-2"
                     role="status"
                   ></div>
                 </>
@@ -255,9 +254,9 @@ const handleCloseOTPModal = ()=>{
             }}
           >
             <div
-              className="modal-content text-white"
+              className="modal-content text-light"
               style={{
-                background: "linear-gradient(45deg, #0f2027, #203a43, #2c5364)",
+                backgroundColor: "#0a1128"
               }}
             >
               <div className="modal-header">
@@ -294,9 +293,9 @@ const handleCloseOTPModal = ()=>{
                           width: "75px",
                           height: "75px",
                           borderRadius: "50%",
-                          border: "6px solid white",
+                          border: "6px solid #ffc107",
                           backgroundColor: "transparent",
-                          color: "#ffc107",
+                          color: "#ffffffff",
                           fontSize: "32px",
                           fontWeight: "bold",
                           display: "flex",
@@ -311,11 +310,12 @@ const handleCloseOTPModal = ()=>{
                     <>
                       <div className="mt-2">
                         <span
-                          className="text-warning"
+                          className="text-light"
                           style={{
                             cursor: "pointer",
                             fontWeight: "bold",
                             fontSize: "1.05rem",
+                           
                           }}
                           onClick={handleResend}
                         >
@@ -325,7 +325,7 @@ const handleCloseOTPModal = ()=>{
 
                       <div className="mt-2">
                         <p
-                          className="text-light"
+                          className="text-muted"
                           style={{ fontSize: "0.9rem" }}
                         >
                           <i className="fas fa-info-circle me-2"></i> Didn't
