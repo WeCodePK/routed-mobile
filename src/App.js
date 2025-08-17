@@ -7,6 +7,7 @@ import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import DriverSidebar from './components/DriverSidebar';
 import AssignRoutes from './pages/AssignRoutes';
+import RouteInfo from './components/RouteInfo';
 function App() {
 const loginEmail = localStorage.getItem("email");
 
@@ -21,6 +22,7 @@ const loginEmail = localStorage.getItem("email");
           <Route path="tracker" element={<LiveTracker />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="routeInfo" element={<RouteInfo />} />
           <Route path="assignRoutes" element={<AssignRoutes afterLoginEmail={loginEmail}/>} />
         </Route>
       </Routes>
